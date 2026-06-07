@@ -1,0 +1,56 @@
+{
+  "name": "agent-surface",
+  "version": "1.0.0",
+  "description": "SDK and CLI for serving interactive agent UI artifacts.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vltansky/agent-surface.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vltansky/agent-surface/issues"
+  },
+  "homepage": "https://github.com/vltansky/agent-surface#readme",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./mdx": {
+      "types": "./dist/mdx.d.ts",
+      "import": "./dist/mdx.js",
+      "require": "./dist/mdx.js"
+    }
+  },
+  "bin": "./dist/cli.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json --emitDeclarationOnly && esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --external:fsevents --external:esbuild --outfile=dist/index.js && esbuild src/mdx.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/mdx.js && esbuild src/cli.ts --bundle --platform=node --target=node20 --format=cjs --external:fsevents --external:esbuild --banner:js='#!/usr/bin/env node' --outfile=dist/cli.js && mkdir -p dist/templates && cp -R templates/. dist/templates/ && chmod +x dist/cli.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "yarn build && vitest run"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "esbuild": "^0.27.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "versionBumpStrategy": "minor"
+  },
+  "wix": {
+    "artifact": {
+      "groupId": "com.wixpress",
+      "artifactId": "agent-surface"
+    }
+  }
+}
