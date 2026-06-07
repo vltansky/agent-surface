@@ -27,9 +27,9 @@ The command supports `.html`, `.jsx`, `.tsx`, and `.mdx` files. JSX/TSX files
 are bundled by Agent Surface with React 18, Tailwind CSS, local imports, and
 host-provided shadcn-style defaults. MDX files use the constrained source-first
 MDX runtime documented in the README.
-A bridge script is injected that provides `window.__au.done(data)`,
-`window.__au.cancel()`, `window.__au.regenerate(data)`, and
-`window.__au.subscribe(handler)`.
+A bridge script is injected that provides `window.__as.done(data)`,
+`window.__as.cancel()`, `window.__as.regenerate(data)`, and
+`window.__as.subscribe(handler)`.
 
 The default server timeout is 8 hours: long enough for course and review sessions
 to remain open while the user works, but still bounded so abandoned servers

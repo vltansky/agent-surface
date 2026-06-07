@@ -32,7 +32,7 @@ describe("agent-surface server bridge session", () => {
     const htmlPath = join(tmpDir, "test.html");
     writeFileSync(
       htmlPath,
-      '<html><body><button onclick="window.__au.done({picked: true})">Go</button></body></html>'
+      '<html><body><button onclick="window.__as.done({picked: true})">Go</button></body></html>'
     );
 
     const result = await spawnServe(
@@ -47,7 +47,7 @@ describe("agent-surface server bridge session", () => {
     expect(output).toEqual({ action: "done", data: { picked: true } });
   });
 
-  it("executes the injected window.__au.done bridge against the live server", async () => {
+  it("executes the injected window.__as.done bridge against the live server", async () => {
     const htmlPath = join(tmpDir, "bridge-done.html");
     writeFileSync(htmlPath, "<html><body>Bridge test</body></html>");
 
@@ -56,7 +56,7 @@ describe("agent-surface server bridge session", () => {
       async (port) => {
         const page = await getPage(port);
         await runServedBridgeAction(page.body, (windowObject) => {
-          windowObject.__au!.done({ picked: true, source: "bridge" });
+          windowObject.__as!.done({ picked: true, source: "bridge" });
         });
       }
     );
@@ -68,7 +68,7 @@ describe("agent-surface server bridge session", () => {
     });
   });
 
-  it("executes the injected window.__au.cancel bridge against the live server", async () => {
+  it("executes the injected window.__as.cancel bridge against the live server", async () => {
     const htmlPath = join(tmpDir, "bridge-cancel.html");
     writeFileSync(htmlPath, "<html><body>Bridge cancel test</body></html>");
 
@@ -77,7 +77,7 @@ describe("agent-surface server bridge session", () => {
       async (port) => {
         const page = await getPage(port);
         await runServedBridgeAction(page.body, (windowObject) => {
-          windowObject.__au!.cancel();
+          windowObject.__as!.cancel();
         });
       }
     );
@@ -118,9 +118,9 @@ describe("agent-surface server bridge session", () => {
     );
 
     expect(result.exitCode).toBe(0);
-    expect(pageBody).toContain("window.__au");
-    expect(pageBody).toContain("window.__au.done");
-    expect(pageBody).toContain("window.__au.cancel");
+    expect(pageBody).toContain("window.__as");
+    expect(pageBody).toContain("window.__as.done");
+    expect(pageBody).toContain("window.__as.cancel");
     expect(pageBody).toContain("/callback");
   });
 
@@ -280,9 +280,9 @@ describe("agent-surface server bridge session", () => {
       new Function(bridgeMatch![0]);
     }).not.toThrow();
 
-    // Verify __au.done is defined (not broken by syntax errors above it)
-    expect(pageBody).toContain("window.__au.done = function");
-    expect(pageBody).toContain("window.__au.cancel = function");
+    // Verify __as.done is defined (not broken by syntax errors above it)
+    expect(pageBody).toContain("window.__as.done = function");
+    expect(pageBody).toContain("window.__as.cancel = function");
 
     // The showRecovery function should use \\x27 not \' for nested quotes
     // Extract only the bridge IIFE (not the Babel script which legitimately uses getElementById('root'))
@@ -293,21 +293,21 @@ describe("agent-surface server bridge session", () => {
   // --- New live-mode features ---------------------------------------------
 
   it("injectBridge places dataBootstrap before first inline <script> in raw HTML", () => {
-    const html = "<html><body><h1>x</h1><script>console.log(window.__au.data)</script></body></html>";
+    const html = "<html><body><h1>x</h1><script>console.log(window.__as.data)</script></body></html>";
     const out = injectBridge(html, 1234, true, '{"foo":1}', "tok");
-    const dataIdx = out.indexOf("window.__au.data = ");
-    const userScriptIdx = out.indexOf("console.log(window.__au.data)");
+    const dataIdx = out.indexOf("window.__as.data = ");
+    const userScriptIdx = out.indexOf("console.log(window.__as.data)");
     expect(dataIdx).toBeGreaterThan(0);
     expect(userScriptIdx).toBeGreaterThan(0);
     expect(dataIdx).toBeLessThan(userScriptIdx);
-    expect(out).toContain("window.__au.subscribe");
+    expect(out).toContain("window.__as.subscribe");
   });
 
   it("injectBridge bridge IIFE goes at end of body, after user scripts", () => {
     const html = "<html><body><script>noop()</script></body></html>";
     const out = injectBridge(html, 1234, true, "{}", "tok");
     const userScriptIdx = out.indexOf("noop()");
-    const bridgeIdx = out.indexOf("window.__au.done");
+    const bridgeIdx = out.indexOf("window.__as.done");
     expect(userScriptIdx).toBeGreaterThan(0);
     expect(bridgeIdx).toBeGreaterThan(userScriptIdx);
   });

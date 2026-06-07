@@ -4,7 +4,7 @@
  * Use case: agent-surface form — collect per-screen structured feedback
  * on a generated tractor wireframe.
  *
- * Expected __au.data shape:
+ * Expected __as.data shape:
  * {
  *   title: "Review Tractor: Booking Flow",
  *   screens: [
@@ -14,7 +14,7 @@
  *   ]
  * }
  *
- * Returns via __au.done():
+ * Returns via __as.done():
  * {
  *   feedback: [
  *     { screen: "settings-panel", note: "move to left sidebar", priority: "high" },
@@ -52,7 +52,7 @@ function Layout({ title, subtitle, children, footer }) {
 }
 
 function App() {
-  const { title = "Review", screens = [] } = window.__au.data;
+  const { title = "Review", screens = [] } = window.__as.data;
   const [feedback, setFeedback] = React.useState({});
   const [priorities, setPriorities] = React.useState({});
   const [expandedId, setExpandedId] = React.useState(null);
@@ -74,11 +74,11 @@ function App() {
     }));
 
   const submit = (approved) => {
-    window.__au.done({ feedback: feedbackEntries, approved });
+    window.__as.done({ feedback: feedbackEntries, approved });
   };
 
   React.useEffect(() => {
-    window.__au._autoSubmit = () => submit(feedbackEntries.length === 0);
+    window.__as._autoSubmit = () => submit(feedbackEntries.length === 0);
   });
 
   const phaseColors = {
@@ -92,7 +92,7 @@ function App() {
       subtitle="Click a screen to add feedback. Submit with no notes to approve as-is."
       footer={
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => window.__au.cancel()}>
+          <Button variant="ghost" onClick={() => window.__as.cancel()}>
             Cancel
           </Button>
           <div className="flex gap-3">

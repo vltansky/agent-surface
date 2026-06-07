@@ -21,7 +21,7 @@ runtime namespace instead of letting source files use normal imports.
 We will make JSX/TSX serve mode import-based.
 
 The runtime bundles the user entry file with esbuild before serving it. The
-served page still injects React, ReactDOM, Tailwind CSS, and the `window.__au`
+served page still injects React, ReactDOM, Tailwind CSS, and the `window.__as`
 bridge, but user code imports UI modules through normal paths.
 
 The default host-provided component surface starts with shadcn-style paths:
@@ -37,10 +37,10 @@ The `@/` alias resolves to the served root first. Local files override host
 defaults, so users can replace a default component or add new local modules such
 as `@/components/ui/date-picker`.
 
-The runtime will not expose component globals such as `window.AU`,
-`window.shadcn`, `AU.*`, or `shadcn.*`. The only global runtime contract kept for
-JSX artifacts is the non-component bridge, including `window.__au.data`,
-`window.__au.done`, `window.__au.cancel`, and related callback helpers.
+The runtime will not expose component globals such as `window.AS`,
+`window.shadcn`, `AS.*`, or `shadcn.*`. The only global runtime contract kept for
+JSX artifacts is the non-component bridge, including `window.__as.data`,
+`window.__as.done`, `window.__as.cancel`, and related callback helpers.
 
 
 ## Alternatives Considered
@@ -62,7 +62,7 @@ JSX artifacts is the non-component bridge, including `window.__au.data`,
 - Negative: `serve` now depends on esbuild at runtime for JSX/TSX files.
 - Negative: the host default component surface becomes an API that must evolve
   carefully.
-- Follow-up: update downstream Creator Kit templates that adopted `AU.*` during
+- Follow-up: update downstream Creator Kit templates that adopted `AS.*` during
   the compatibility migration to use shadcn-style imports after this runtime
   lands and publishes.
 

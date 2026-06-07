@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Bridge script — injected into every served page.
-// Provides window.__au.done(data) and window.__au.cancel().
+// Provides window.__as.done(data) and window.__as.cancel().
 // PORT_PLACEHOLDER is replaced with the actual port at serve time.
 // ---------------------------------------------------------------------------
 export const BRIDGE_SCRIPT = `
@@ -14,24 +14,24 @@ export const BRIDGE_SCRIPT = `
   var requestDelivered = false;
   var multiMode = MULTI_PLACEHOLDER;
   var watchMode = WATCH_PLACEHOLDER;
-  window.__au = window.__au || {};
-  window.__au.sessionToken = sessionToken;
+  window.__as = window.__as || {};
+  window.__as.sessionToken = sessionToken;
 
-  window.__au.done = function(data) {
+  window.__as.done = function(data) {
     if (submitted) return;
     submitted = true;
     var payload = { action: 'done', data: data || {} };
     showDone(payload);
     post(payload);
   };
-  window.__au.cancel = function() {
+  window.__as.cancel = function() {
     if (submitted) return;
     submitted = true;
     showDone(null);
     post({ action: 'cancel' });
   };
-  window.__au.regenerate = function(data) {
-    if (!multiMode) { window.__au.done(data); return; }
+  window.__as.regenerate = function(data) {
+    if (!multiMode) { window.__as.done(data); return; }
     submitted = true;
     post({ action: 'regenerate', data: data || {} });
   };
@@ -45,8 +45,8 @@ export const BRIDGE_SCRIPT = `
       if (!submitted) showDone(null);
     });
     evtSource.addEventListener('auto-submit', function() {
-      if (window.__au._autoSubmit) {
-        window.__au._autoSubmit();
+      if (window.__as._autoSubmit) {
+        window.__as._autoSubmit();
       }
     });
     evtSource.addEventListener('data', function(e) {
@@ -57,7 +57,7 @@ export const BRIDGE_SCRIPT = `
       }
     });
   }
-  window.__au.subscribe = function(handler) {
+  window.__as.subscribe = function(handler) {
     if (typeof handler === 'function') dataSubscribers.push(handler);
   };
 
@@ -159,8 +159,8 @@ export function buildJsxShell(bundledSource: string, dataJson: string): string {
 <body>
   <div id="root"></div>
   <script>
-    window.__au = window.__au || {};
-    window.__au.data = ${dataJson.replace(/<\//g, "<\\/")};
+    window.__as = window.__as || {};
+    window.__as.data = ${dataJson.replace(/<\//g, "<\\/")};
   </script>
   BRIDGE_INJECT_POINT
   <script>
@@ -179,7 +179,7 @@ export function injectBridge(html: string, port: number, multi: boolean, dataJso
     .replace(/MULTI_PLACEHOLDER/g, String(multi))
     .replace(/WATCH_PLACEHOLDER/g, String(watchMode))
     .replace(/SESSION_TOKEN_PLACEHOLDER/g, sessionToken);
-  const dataBootstrap = `<script>window.__au = window.__au || {}; window.__au.data = ${dataJson.replace(/<\//g, "<\\/")};</script>`;
+  const dataBootstrap = `<script>window.__as = window.__as || {}; window.__as.data = ${dataJson.replace(/<\//g, "<\\/")};</script>`;
   // For JSX shells: inject at the marked point (before Babel script). dataBootstrap is already in shell.
   if (html.includes("BRIDGE_INJECT_POINT")) {
     return html.replace("BRIDGE_INJECT_POINT", bridge);
@@ -190,7 +190,7 @@ export function injectBridge(html: string, port: number, multi: boolean, dataJso
   if (withFavicon.includes("</head>") && !withFavicon.includes('href="/favicon.svg"')) {
     withFavicon = withFavicon.replace("</head>", faviconTag + "</head>");
   }
-  // For raw HTML: dataBootstrap must run BEFORE any inline <script> in the page so they see window.__au.data.
+  // For raw HTML: dataBootstrap must run BEFORE any inline <script> in the page so they see window.__as.data.
   // Insert before the first <script> tag (head or body); fall back to before </body>; fall back to append.
   let withData: string;
   const firstScriptMatch = withFavicon.match(/<script[\s>]/i);

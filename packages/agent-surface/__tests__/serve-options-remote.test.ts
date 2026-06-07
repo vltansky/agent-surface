@@ -94,7 +94,7 @@ describe("agent-surface serve options remote", () => {
   it("serves a remote non-GitHub URL by fetching it first", async () => {
     const remoteServer = createServer((_req, res) => {
       res.writeHead(200, { "Content-Type": "text/html" });
-      res.end('<html><body><button onclick="window.__au.done({remote: true})">Remote</button></body></html>');
+      res.end('<html><body><button onclick="window.__as.done({remote: true})">Remote</button></body></html>');
     });
     await new Promise<void>((resolve) => remoteServer.listen(0, "127.0.0.1", resolve));
     const address = remoteServer.address();
@@ -114,7 +114,7 @@ describe("agent-surface serve options remote", () => {
 
       expect(result.exitCode).toBe(0);
       expect(pageBody).toContain("Remote");
-      expect(pageBody).toContain("window.__au.done");
+      expect(pageBody).toContain("window.__as.done");
       expect(JSON.parse(result.stdout.trim())).toEqual({ action: "done", data: { remote: true } });
     } finally {
       await new Promise<void>((resolve) => remoteServer.close(() => resolve()));
@@ -148,7 +148,7 @@ describe("agent-surface serve options remote", () => {
     const jsxPath = join(tmpDir, "test.jsx");
     writeFileSync(
       jsxPath,
-      'function App() { return <div>{JSON.stringify(window.__au.data)}</div>; }'
+      'function App() { return <div>{JSON.stringify(window.__as.data)}</div>; }'
     );
     const dataPath = join(tmpDir, "data.json");
     writeFileSync(dataPath, '{"fromFile": true}');
@@ -180,7 +180,7 @@ describe("agent-surface serve options remote", () => {
 
     expect(result.exitCode).toBe(0);
     expect(pageBody).toContain("Review");
-    expect(pageBody).toContain("window.__au.data");
+    expect(pageBody).toContain("window.__as.data");
   });
 
   it(" prints session directory to stderr", async () => {

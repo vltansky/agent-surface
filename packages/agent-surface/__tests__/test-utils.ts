@@ -103,7 +103,7 @@ export function getPage(port: number, path = "/"): Promise<{ status: number; bod
 
 export function runServedBridgeAction(
   pageBody: string,
-  action: (windowObject: { __au?: { done(data?: unknown): void; cancel(): void; regenerate(data?: unknown): void }; [key: string]: unknown }) => void
+  action: (windowObject: { __as?: { done(data?: unknown): void; cancel(): void; regenerate(data?: unknown): void }; [key: string]: unknown }) => void
 ): Promise<void> {
   const bridgeMatch = pageBody.match(/<script>\s*(\(function\(\)\s*\{[\s\S]*?var baseUrl[\s\S]*?\}\)\(\);)\s*<\/script>/);
   expect(bridgeMatch).not.toBeNull();
@@ -111,7 +111,7 @@ export function runServedBridgeAction(
   return new Promise((resolve, reject) => {
     const windowObject = {
       addEventListener: () => undefined,
-    } as { __au?: { done(data?: unknown): void; cancel(): void; regenerate(data?: unknown): void }; [key: string]: unknown; addEventListener(): void };
+    } as { __as?: { done(data?: unknown): void; cancel(): void; regenerate(data?: unknown): void }; [key: string]: unknown; addEventListener(): void };
     const documentObject = { body: { innerHTML: "" } };
     const navigatorObject = { sendBeacon: () => true };
     const urlObject = { createObjectURL: () => "blob:agent-surface-test" };
@@ -182,7 +182,7 @@ export function runServedBridgeAction(
         eventSourceConstructor
       );
       expect(windowObject["__" + "ck"]).toBeUndefined();
-      expect(windowObject.__au).toBeDefined();
+      expect(windowObject.__as).toBeDefined();
       action(windowObject);
     } catch (error) {
       reject(error);

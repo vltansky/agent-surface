@@ -100,7 +100,7 @@ describe("agent-surface watch reuse", () => {
     expect(result.stderr).toContain("--watch requires --transform");
   });
 
-  it("--transform seeds initial window.__au.data on first paint", async () => {
+  it("--transform seeds initial window.__as.data on first paint", async () => {
     const htmlPath = join(tmpDir, "init.html");
     writeFileSync(htmlPath, "<html><body><script>document.title='x'</script></body></html>");
     const tx = join(tmpDir, "tx.js");

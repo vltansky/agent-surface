@@ -5,7 +5,7 @@
  * Per-concept: select toggle, 5-star rating, text comment.
  * Inspired by gstack design-shotgun comparison board.
  *
- * Expected __au.data shape:
+ * Expected __as.data shape:
  * {
  *   title: "Pick your favorite concepts",
  *   items: [
@@ -13,14 +13,14 @@
  *   ]
  * }
  *
- * Returns via __au.done():
+ * Returns via __as.done():
  * {
  *   selected: { id: "concept-1-tabs", rating: 4, notes: "love the tab switching UX" },
  *   ratings: { "concept-1-tabs": 4, "concept-2-sidebar": 2 },
  *   overall: "Use A's layout with C's nav"
  * }
  *
- * Or via __au.regenerate():
+ * Or via __as.regenerate():
  * {
  *   action: "different" | "refine" | "more_like_{id}" | "custom",
  *   ratings: {...}, notes: {...}, overall: "..."
@@ -49,7 +49,7 @@ function Stars({ value, onChange, hover, onHover, onLeave }) {
 }
 
 function App() {
-  const { title = "Select concepts", items = [] } = window.__au.data;
+  const { title = "Select concepts", items = [] } = window.__as.data;
   const labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const [view, setView] = React.useState("grid");
@@ -69,7 +69,7 @@ function App() {
     const picked = selected ? items.find((it) => it.id === selected) : null;
     const allRatings = {};
     items.forEach((it) => { if (ratings[it.id]) allRatings[it.id] = ratings[it.id]; });
-    window.__au.done({
+    window.__as.done({
       selected: picked ? { id: picked.id, rating: ratings[picked.id] || 0, notes: notes[picked.id] || "" } : null,
       ratings: allRatings,
       overall,
@@ -78,7 +78,7 @@ function App() {
 
   // Register auto-submit so timeout captures current state
   React.useEffect(() => {
-    window.__au._autoSubmit = submit;
+    window.__as._autoSubmit = submit;
   });
 
   const regenerate = (action, extra = {}) => {
@@ -86,7 +86,7 @@ function App() {
     items.forEach((it) => { if (ratings[it.id]) allRatings[it.id] = ratings[it.id]; });
     const allNotes = {};
     items.forEach((it) => { if (notes[it.id]) allNotes[it.id] = notes[it.id]; });
-    window.__au.regenerate({ action, ratings: allRatings, notes: allNotes, overall, ...extra });
+    window.__as.regenerate({ action, ratings: allRatings, notes: allNotes, overall, ...extra });
   };
 
   // --- Full view (one at a time with iframe) ---

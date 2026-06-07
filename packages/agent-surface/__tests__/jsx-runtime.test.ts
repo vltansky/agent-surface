@@ -33,7 +33,7 @@ describe("agent-surface jsx runtime", () => {
     writeFileSync(
       jsxPath,
       `function App() {
-  return <div className="p-4"><button onClick={() => window.__au.done({x: 1})}>Done</button></div>;
+  return <div className="p-4"><button onClick={() => window.__as.done({x: 1})}>Done</button></div>;
 }`
     );
 
@@ -58,14 +58,14 @@ describe("agent-surface jsx runtime", () => {
     // Should contain injected data
     expect(pageBody).toContain('"items"');
     // Should contain bridge
-    expect(pageBody).toContain("window.__au");
+    expect(pageBody).toContain("window.__as");
   });
 
-  it("passes --data to window.__au.data for JSX files", async () => {
+  it("passes --data to window.__as.data for JSX files", async () => {
     const jsxPath = join(tmpDir, "test.jsx");
     writeFileSync(
       jsxPath,
-      'function App() { return <div>{JSON.stringify(window.__au.data)}</div>; }'
+      'function App() { return <div>{JSON.stringify(window.__as.data)}</div>; }'
     );
 
     let pageBody = "";
@@ -79,7 +79,7 @@ describe("agent-surface jsx runtime", () => {
     );
 
     expect(result.exitCode).toBe(0);
-    expect(pageBody).toContain('window.__au.data = {"concepts":["a","b"]}');
+    expect(pageBody).toContain('window.__as.data = {"concepts":["a","b"]}');
   });
 
   it("serves directory with index.jsx as entry-point", async () => {
@@ -134,7 +134,7 @@ describe("agent-surface jsx runtime", () => {
     expect(pageBody).toContain("function Button");
     expect(pageBody).not.toContain('from "@/components/ui/button"');
     expect(pageBody).not.toContain("window.shadcn");
-    expect(pageBody).not.toContain("window.AU");
+    expect(pageBody).not.toContain("window.AS");
     expect(pageBody).not.toContain("shadcn.Button");
     expect(pageBody).not.toContain("AU.Button");
   });

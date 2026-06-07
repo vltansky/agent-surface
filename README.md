@@ -36,7 +36,7 @@ function App() {
       { id: "approve", label: "Approve", description: "Looks ready." },
       { id: "revise", label: "Revise", description: "Needs another pass." },
     ],
-  } = window.__au.data;
+  } = window.__as.data;
   const [selected, setSelected] = useState(options[0]?.id);
   const [reviewer, setReviewer] = useState("");
   const [note, setNote] = useState("");
@@ -85,10 +85,10 @@ function App() {
             />
           </CardContent>
           <CardFooter className="justify-end gap-2">
-            <Button variant="ghost" onClick={() => window.__au.cancel()}>
+            <Button variant="ghost" onClick={() => window.__as.cancel()}>
               Cancel
             </Button>
-            <Button onClick={() => window.__au.done({ selected, reviewer, note })}>
+            <Button onClick={() => window.__as.done({ selected, reviewer, note })}>
               Submit
             </Button>
           </CardFooter>
@@ -153,7 +153,7 @@ Raw HTML works:
 <!doctype html>
 <html>
   <body>
-    <button onclick="window.__au.done({ approved: true })">
+    <button onclick="window.__as.done({ approved: true })">
       Approve
     </button>
   </body>
@@ -161,14 +161,14 @@ Raw HTML works:
 ```
 
 JSX and TSX work too. Agent Surface bundles local React files, wraps them with
-React, ReactDOM, Tailwind, the bridge, and `window.__au.data`, and provides a
+React, ReactDOM, Tailwind, the bridge, and `window.__as.data`, and provides a
 small default shadcn-style component surface through normal imports.
 
 ```jsx
 import { Button } from "@/components/ui/button";
 
 function App() {
-  const { title = "Pick one", items = [] } = window.__au.data;
+  const { title = "Pick one", items = [] } = window.__as.data;
 
   return (
     <main className="p-6">
@@ -177,7 +177,7 @@ function App() {
         <Button
           key={item.id}
           className="mt-3"
-          onClick={() => window.__au.done({ selected: item.id })}
+          onClick={() => window.__as.done({ selected: item.id })}
         >
           {item.label}
         </Button>
@@ -190,8 +190,8 @@ function App() {
 For JSX/TSX, `@/` resolves to the served root. Local files such as
 `components/ui/button.tsx` override the host defaults, while missing known
 defaults fall back to the runtime-provided shadcn-compatible components. There
-are no component globals: use imports instead of `window.AU`, `window.shadcn`,
-`AU.*`, or `shadcn.*`.
+are no component globals: use imports instead of `window.AS`, `window.shadcn`,
+`AS.*`, or `shadcn.*`.
 
 The default host modules are:
 
@@ -269,8 +269,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 These imports are authoring aliases into the controlled MDX preview runtime:
 Agent Surface owns the safe rendering so artifacts stay local-first, while authors
-can use familiar shadcn-compatible component names without `window.AU`,
-`window.shadcn`, `AU.*`, or `shadcn.*` globals.
+can use familiar shadcn-compatible component names without `window.AS`,
+`window.shadcn`, `AS.*`, or `shadcn.*` globals.
 
 Use `agent-surface/mdx` for MDX-only helpers that do not have a natural
 shadcn file path: report primitives, chart wrappers, aggregate component maps,
@@ -331,8 +331,8 @@ sequenceDiagram
   participant C as agent-surface CLI/SDK
   participant B as Browser UI
   A->>C: serve HTML/MDX + input JSON
-  C->>B: localhost page + window.__au
-  B->>C: __au.done(data) / cancel() / regenerate(data)
+  C->>B: localhost page + window.__as
+  B->>C: __as.done(data) / cancel() / regenerate(data)
   C->>A: stdout JSON or feedback.json
   A->>A: continue with returned answer in context
 ```
@@ -345,7 +345,7 @@ Final payload shape:
 
 ## How It Works
 
-Agent Surface is a local micro-frontend host. The page gets `window.__au`; the agent gets stdout JSON or files from `--session-dir`.
+Agent Surface is a local micro-frontend host. The page gets `window.__as`; the agent gets stdout JSON or files from `--session-dir`.
 
 ```mermaid
 flowchart LR
@@ -357,7 +357,7 @@ flowchart LR
 
   subgraph Runtime["agent-surface runtime"]
     Server["127.0.0.1 server"]
-    Bridge["inject window.__au"]
+    Bridge["inject window.__as"]
     Files["session.json / feedback.json"]
     Events["SSE /events"]
   end
@@ -381,11 +381,11 @@ Browser surface:
 
 | Surface | Purpose |
 |---|---|
-| `window.__au.data` | Initial data from `--data`, `--data-file`, or watch transforms |
-| `window.__au.done(data)` | Return a success payload to the agent |
-| `window.__au.cancel()` | Return cancellation and exit `1` |
-| `window.__au.regenerate(data)` | Return structured feedback for another agent pass |
-| `window.__au.subscribe(handler)` | Receive live watch updates |
+| `window.__as.data` | Initial data from `--data`, `--data-file`, or watch transforms |
+| `window.__as.done(data)` | Return a success payload to the agent |
+| `window.__as.cancel()` | Return cancellation and exit `1` |
+| `window.__as.regenerate(data)` | Return structured feedback for another agent pass |
+| `window.__as.subscribe(handler)` | Receive live watch updates |
 
 Agent return paths:
 
@@ -544,7 +544,7 @@ npx -y agent-surface serve picker.jsx \
   --data-file /tmp/agent-surface-input.json
 ```
 
-The JSON is available as `window.__au.data`. Invalid JSON fails before the browser opens.
+The JSON is available as `window.__as.data`. Invalid JSON fails before the browser opens.
 
 Use `--template` when the agent wants a known UI shell without writing a local JSX file:
 
@@ -572,7 +572,7 @@ npx -y agent-surface serve review.jsx \
 
 ### Watch Mode
 
-Watch mode is for live previews. It watches one or more globs, runs a transform script, and broadcasts updated `window.__au.data` to the browser over Server-Sent Events.
+Watch mode is for live previews. It watches one or more globs, runs a transform script, and broadcasts updated `window.__as.data` to the browser over Server-Sent Events.
 
 ```bash
 npx -y agent-surface serve dashboard.jsx \
@@ -582,7 +582,7 @@ npx -y agent-surface serve dashboard.jsx \
   --project-dir "$PWD"
 ```
 
-The transform module is loaded from `--transform` and runs once before the first page load, then again after watched files change. It should return JSON-serializable data. If it returns `{ value, summary }`, `value` becomes `window.__au.data`; with `--print-summary`, `summary` is printed to stdout whenever the transform runs.
+The transform module is loaded from `--transform` and runs once before the first page load, then again after watched files change. It should return JSON-serializable data. If it returns `{ value, summary }`, `value` becomes `window.__as.data`; with `--print-summary`, `summary` is printed to stdout whenever the transform runs.
 
 `--watch` requires `--transform`. Without an explicit `--timeout`, watch mode disables the normal TTL so the browser session can stay alive while a tab is connected.
 

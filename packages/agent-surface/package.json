@@ -1,6 +1,6 @@
 {
   "name": "agent-surface",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "SDK and CLI for serving interactive agent UI artifacts.",
   "author": "Vlad Tansky",
   "license": "MIT",
