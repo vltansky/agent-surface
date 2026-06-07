@@ -2,6 +2,7 @@
   "name": "agent-surface",
   "version": "1.0.0",
   "description": "SDK and CLI for serving interactive agent UI artifacts.",
+  "author": "Vlad Tansky",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,10 +26,13 @@
       "require": "./dist/mdx.js"
     }
   },
-  "bin": "./dist/cli.js",
+  "bin": "dist/cli.js",
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json --emitDeclarationOnly && esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --external:fsevents --external:esbuild --outfile=dist/index.js && esbuild src/mdx.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/mdx.js && esbuild src/cli.ts --bundle --platform=node --target=node20 --format=cjs --external:fsevents --external:esbuild --banner:js='#!/usr/bin/env node' --outfile=dist/cli.js && mkdir -p dist/templates && cp -R templates/. dist/templates/ && chmod +x dist/cli.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -44,13 +48,6 @@
     "vitest": "^4.0.18"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "versionBumpStrategy": "minor"
-  },
-  "wix": {
-    "artifact": {
-      "groupId": "com.wixpress",
-      "artifactId": "agent-surface"
-    }
+    "registry": "https://registry.npmjs.org/"
   }
 }

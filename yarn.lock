@@ -520,7 +520,7 @@ __metadata:
     typescript: "npm:^5.8.2"
     vitest: "npm:^4.0.18"
   bin:
-    agent-surface: ./dist/cli.js
+    agent-surface: dist/cli.js
   languageName: unknown
   linkType: soft
 
