@@ -636,4 +636,4 @@ yarn build
 yarn test
 ```
 
-This repository publishes `agent-surface` to the Wix internal npm registry.
+This repository publishes `agent-surface` to the public npm registry.
