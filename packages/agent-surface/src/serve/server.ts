@@ -10,7 +10,7 @@ import {
 } from "../browser-runtime";
 import { openBrowser, runRefocusSequence } from "../platform";
 import type { ServeOptions } from "./options";
-import { startWatchMode } from "./watch";
+import { startReloadWatcher, startWatchMode } from "./watch";
 
 const SESSION_TOKEN_HEADER = "x-au-session-token";
 export const EXIT_AFTER_DISCONNECT_MS = Number(process.env.AGENT_UI_EXIT_AFTER_DISCONNECT_MS) || 30_000;
@@ -18,6 +18,27 @@ export const EXIT_AFTER_DISCONNECT_MS = Number(process.env.AGENT_UI_EXIT_AFTER_D
 export type ServeResult = {
   payload: Record<string, unknown>;
   exitCode: number;
+};
+
+export type ServeRouteContext = {
+  req: IncomingMessage;
+  res: ServerResponse;
+  url: URL;
+  sessionToken: string;
+  sessionDir: string;
+  projectDir: string;
+  rootDir: string;
+  isAuthorized(): boolean;
+  rejectUnauthorized(): void;
+  readBody(): Promise<string>;
+  broadcast(event: string, data?: string): void;
+  finish(payload: Record<string, unknown>, exitCode?: number): void;
+};
+
+export type ServeRoute = (ctx: ServeRouteContext) => boolean | Promise<boolean>;
+
+export type ServeUIExtensions = {
+  extraRoutes?: ServeRoute[];
 };
 
 export type ServeServerHandle = {
@@ -36,7 +57,14 @@ export function readBody(req: IncomingMessage): Promise<string> {
     req.on("error", reject);
   });
 }
-export function startServer(html: string, opts: ServeOptions): Promise<ServeServerHandle> {
+export function startServer(
+  html: string,
+  opts: ServeOptions,
+  ext: ServeUIExtensions = {},
+  rebuildEntry?: () => Promise<string>
+): Promise<ServeServerHandle> {
+  const extraRoutes = ext.extraRoutes ?? [];
+  const liveMode = opts.watch.length > 0 || opts.reloadOnChange.length > 0;
   const sseClients: ServerResponse[] = [];
   const sessionToken = randomBytes(24).toString("hex");
   // Live data ref: replaced by the watcher on each transform run. Initial value = opts.dataJson.
@@ -45,6 +73,7 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
   let timeoutTimer: NodeJS.Timeout | null = null;
   let timeoutSubmitTimer: NodeJS.Timeout | null = null;
   let watcher: import("chokidar").FSWatcher | null = null;
+  let reloadWatcher: import("chokidar").FSWatcher | null = null;
   let settled = false;
   let settleResult: (result: ServeResult) => void = () => undefined;
   const result = new Promise<ServeResult>((resolveResult) => {
@@ -85,9 +114,9 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
     }
   }
   function maybeStartDisconnectTimer(): void {
-    // Only auto-exit-on-disconnect when the watcher is active. Otherwise the existing
-    // --timeout behavior (8h default) governs lifecycle.
-    if (opts.watch.length === 0) return;
+    // Only auto-exit-on-disconnect in live mode. Otherwise the existing --timeout
+    // behavior (8h default) governs lifecycle.
+    if (!liveMode) return;
     if (sseClients.length > 0) return;
     if (disconnectTimer) return;
     disconnectTimer = setTimeout(() => {
@@ -129,6 +158,7 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
     clearTimers();
     closeSseClients();
     void watcher?.close();
+    void reloadWatcher?.close();
     server.close();
     settleResult({ payload, exitCode });
   }
@@ -313,7 +343,16 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
 
     if (req.method === "GET" && (requestPath === "/" || requestPath === "/index.html")) {
       const port = (server.address() as { port: number }).port;
-      const injected = injectBridge(html, port, true, currentData.json, sessionToken, opts.watch.length > 0);
+      let pageHtml = html;
+      if (liveMode && rebuildEntry) {
+        try {
+          pageHtml = await rebuildEntry();
+          html = pageHtml;
+        } catch (err) {
+          process.stderr.write(`Rebuild error: ${err instanceof Error ? err.message : String(err)}\n`);
+        }
+      }
+      const injected = injectBridge(pageHtml, port, true, currentData.json, sessionToken, liveMode);
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(injected);
       return;
@@ -341,6 +380,27 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
       res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=86400" });
       res.end(AGENT_UI_FAVICON_SVG);
       return;
+    }
+
+    if (extraRoutes.length > 0) {
+      const ctx: ServeRouteContext = {
+        req,
+        res,
+        url: getRequestUrl(req),
+        sessionToken,
+        sessionDir: opts.sessionDir,
+        projectDir: opts.projectDir,
+        rootDir: opts.rootDir,
+        isAuthorized: () => isAuthorized(req),
+        rejectUnauthorized: () => rejectUnauthorized(res),
+        readBody: () => readBody(req),
+        broadcast: sseBroadcast,
+        finish: (payload, exitCode = 0) => finishServe(payload, exitCode),
+      };
+
+      for (const route of extraRoutes) {
+        if (await route(ctx)) return;
+      }
     }
 
     let urlPath: string;
@@ -397,6 +457,10 @@ export function startServer(html: string, opts: ServeOptions): Promise<ServeServ
             currentData.json = json;
           },
         }
+      );
+      reloadWatcher = startReloadWatcher(
+        { reloadOnChange: opts.reloadOnChange, watchIgnore: opts.watchIgnore },
+        { broadcast: sseBroadcast }
       );
 
       resolveReady({

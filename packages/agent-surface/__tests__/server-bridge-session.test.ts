@@ -361,6 +361,8 @@ describe("agent-surface server bridge session", () => {
       multi: false,
       sessionDir,
       watch: [],
+      reloadOnChange: [],
+      watchIgnore: [],
       transformPath: "",
       projectDir: tmpDir,
       reuseKey: "",

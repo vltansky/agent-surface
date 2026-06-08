@@ -14,6 +14,8 @@ export interface ServeOptions {
   multi: boolean;
   sessionDir: string;
   watch: string[];
+  reloadOnChange: string[];
+  watchIgnore: string[];
   transformPath: string;
   projectDir: string;
   reuseKey: string;
@@ -34,6 +36,8 @@ export function parseServeArgs(args: string[]): ServeOptions {
   let port = 0;
   let sessionDirOverride = "";
   const watch: string[] = [];
+  const reloadOnChange: string[] = [];
+  const watchIgnore: string[] = [];
   let transformPath = "";
   let projectDir = "";
   let reuseKey = "";
@@ -45,6 +49,10 @@ export function parseServeArgs(args: string[]): ServeOptions {
       rootDir = resolve(args[++i]);
     } else if (arg === "--watch" && i + 1 < args.length) {
       watch.push(args[++i]);
+    } else if (arg === "--reload-on-change" && i + 1 < args.length) {
+      reloadOnChange.push(resolve(args[++i]));
+    } else if (arg === "--watch-ignore" && i + 1 < args.length) {
+      watchIgnore.push(args[++i]);
     } else if (arg === "--transform" && i + 1 < args.length) {
       transformPath = resolve(args[++i]);
     } else if (arg === "--project-dir" && i + 1 < args.length) {
@@ -103,7 +111,7 @@ export function parseServeArgs(args: string[]): ServeOptions {
 
   if (!filePath) {
     throw new Error(
-      "Usage: agent-surface serve <file.html|file.jsx|file.tsx|file.mdx|url> [--data <json>] [--data-file <path>] [--timeout <ms>] [--no-open] [--port <n>] [--session-dir <path>] [--watch <glob>] [--transform <script>] [--project-dir <dir>] [--reuse <key>] [--print-summary]"
+      "Usage: agent-surface serve <file.html|file.jsx|file.tsx|file.mdx|url> [--data <json>] [--data-file <path>] [--timeout <ms>] [--no-open] [--port <n>] [--session-dir <path>] [--watch <glob>] [--reload-on-change <glob>] [--watch-ignore <glob>] [--transform <script>] [--project-dir <dir>] [--reuse <key>] [--print-summary]"
     );
   }
 
@@ -128,16 +136,16 @@ export function parseServeArgs(args: string[]): ServeOptions {
 
   const sessionDir = resolveSessionDir(sessionDirOverride, reuseKey);
 
-  // Watch mode is intended to run as long as a browser is connected. The 8h default
-  // timeout is appropriate for one-shot pickers/forms; in watch mode the right lifecycle
-  // is the SSE-disconnect grace (default 30s after the last tab closes).
-  if (watch.length > 0 && !timeoutExplicit) {
+  // Watch / reload-on-change mode is intended to run as long as a browser is connected.
+  // The 8h default timeout is appropriate for one-shot pickers/forms; in live mode the
+  // right lifecycle is the SSE-disconnect grace (default 30s after the last tab closes).
+  if ((watch.length > 0 || reloadOnChange.length > 0) && !timeoutExplicit) {
     timeout = 0;
   }
 
   return {
     filePath: resolvedFile, rootDir, dataJson, timeout, noOpen, port, multi: false,
-    sessionDir, watch, transformPath, projectDir, reuseKey, printSummary,
+    sessionDir, watch, reloadOnChange, watchIgnore, transformPath, projectDir, reuseKey, printSummary,
     _rootWasExplicit: rootWasExplicit,
   };
 }

@@ -78,3 +78,28 @@ export function startWatchMode(opts: { watch: string[]; transformPath: string; p
   watcher.on("unlink", onChange);
   return watcher;
 }
+
+export function startReloadWatcher(
+  opts: { reloadOnChange: string[]; watchIgnore: string[] },
+  runtime: { broadcast(event: string, data?: string): void }
+): chokidar.FSWatcher | null {
+  if (opts.reloadOnChange.length === 0) return null;
+
+  let debounce: NodeJS.Timeout | null = null;
+  const onChange = (): void => {
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      debounce = null;
+      runtime.broadcast("reload");
+    }, WATCH_DEBOUNCE_MS);
+  };
+
+  const watcher = chokidar.watch(opts.reloadOnChange, {
+    ignored: opts.watchIgnore.length > 0 ? opts.watchIgnore : undefined,
+    ignoreInitial: true,
+  });
+  watcher.on("add", onChange);
+  watcher.on("change", onChange);
+  watcher.on("unlink", onChange);
+  return watcher;
+}

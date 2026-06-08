@@ -7,7 +7,7 @@ import { parseServeArgs, type ServeOptions } from "./options";
 import { fetchRemoteSource, isRemoteUrl } from "./remote-source";
 import { tryReuseExisting } from "./session";
 import { loadTransform } from "./watch";
-import { startServer } from "./server";
+import { startServer, type ServeUIExtensions } from "./server";
 
 function resolveEntryPoint(opts: ServeOptions, rootWasExplicit: boolean): void {
   if (!existsSync(opts.filePath)) {
@@ -51,7 +51,30 @@ async function materializeRemoteEntry(opts: ServeOptions): Promise<void> {
   }
 }
 
-export async function serveUI(commandArgs: string[]): Promise<void> {
+export async function buildEntryHtml(opts: ServeOptions): Promise<string> {
+  const ext = extname(opts.filePath).toLowerCase();
+  const rawContent = readFileSync(opts.filePath, "utf-8");
+
+  if (ext === ".jsx" || ext === ".tsx") {
+    const bundledSource = await buildJsxBundle({
+      entryPath: opts.filePath,
+      rootDir: opts.rootDir,
+    });
+    return buildJsxShell(bundledSource, opts.dataJson);
+  } else if (ext === ".mdx") {
+    const artifact = buildMdxArtifact(rawContent, opts.filePath);
+    opts.mdxArtifact = artifact;
+    return artifact.html;
+  } else if (ext === ".html" || ext === ".htm") {
+    return rawContent;
+  }
+
+  throw new Error(
+    `Unsupported file type "${ext}". Use .html, .jsx, .tsx, .mdx, or a URL ending in one of those extensions`
+  );
+}
+
+export async function serveUI(commandArgs: string[], ext: ServeUIExtensions = {}): Promise<void> {
   const opts = parseServeArgs(commandArgs);
 
   if (opts.reuseKey) {
@@ -97,38 +120,21 @@ export async function serveUI(commandArgs: string[]): Promise<void> {
     }
   }
 
-  const ext = extname(opts.filePath).toLowerCase();
-  const rawContent = readFileSync(opts.filePath, "utf-8");
-
   let html: string;
-  if (ext === ".jsx" || ext === ".tsx") {
-    try {
-      const bundledSource = await buildJsxBundle({
-        entryPath: opts.filePath,
-        rootDir: opts.rootDir,
-      });
-      html = buildJsxShell(bundledSource, opts.dataJson);
-    } catch (err) {
-      console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-      process.exit(1);
-    }
-  } else if (ext === ".mdx") {
-    try {
-      const artifact = buildMdxArtifact(rawContent, opts.filePath);
-      html = artifact.html;
-      opts.mdxArtifact = artifact;
-    } catch (err) {
-      console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-      process.exit(1);
-    }
-  } else if (ext === ".html" || ext === ".htm") {
-    html = rawContent;
-  } else {
-    console.error(`Error: Unsupported file type "${ext}". Use .html, .jsx, .tsx, .mdx, or a URL ending in one of those extensions`);
+  try {
+    html = await buildEntryHtml(opts);
+  } catch (err) {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
 
-  const handle = await startServer(html, opts);
+  const liveMode = opts.watch.length > 0 || opts.reloadOnChange.length > 0;
+  const handle = await startServer(
+    html,
+    opts,
+    ext,
+    liveMode ? () => buildEntryHtml(opts) : undefined
+  );
   const shutdown = (): void => {
     handle.close({ action: "cancel" }, 1);
   };

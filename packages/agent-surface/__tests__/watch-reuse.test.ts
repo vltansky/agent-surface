@@ -296,4 +296,155 @@ describe("agent-surface watch reuse", () => {
     expect(exitedAt).toBeGreaterThan(400);
     expect(exitedAt).toBeLessThan(5_000);
   });
+
+  it("--reload-on-change broadcasts a debounced 'reload' SSE event when a watched file changes", async () => {
+    const htmlPath = join(tmpDir, "live.html");
+    writeFileSync(htmlPath, "<html><body>v1</body></html>");
+    const watched = join(tmpDir, "src.txt");
+    writeFileSync(watched, "1");
+
+    let sawReload = false;
+    const result = await spawnServe(
+      [htmlPath, "--no-open", "--reload-on-change", join(tmpDir, "*.txt")],
+      async (port) => {
+        const page = await getPage(port);
+        const token = page.body.match(/var sessionToken = '([^']+)'/)![1];
+
+        await new Promise<void>((resolveOuter, reject) => {
+          const sseReq = request(
+            {
+              hostname: "127.0.0.1",
+              port,
+              path: `/events?token=${encodeURIComponent(token)}`,
+              method: "GET",
+            },
+            (sseRes) => {
+              let buf = "";
+              let connected = false;
+              sseRes.on("data", (chunk: Buffer) => {
+                buf += chunk.toString();
+                if (!connected && buf.includes("event: connected")) {
+                  connected = true;
+                  setTimeout(() => {
+                    writeFileSync(watched, "2");
+                  }, 100);
+                }
+                if (connected && buf.includes("event: reload")) {
+                  sawReload = true;
+                  sseRes.destroy();
+                  resolveOuter();
+                }
+              });
+              sseRes.on("end", () => resolveOuter());
+            }
+          );
+          sseReq.on("error", reject);
+          sseReq.end();
+        });
+
+        postCallback(port, { action: "done", data: {} });
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(sawReload).toBe(true);
+  });
+
+  it("--watch-ignore excludes matching paths from triggering reload", async () => {
+    const htmlPath = join(tmpDir, "ignore.html");
+    writeFileSync(htmlPath, "<html><body>ig</body></html>");
+
+    let reloadAfterIgnored = false;
+    const result = await spawnServe(
+      [htmlPath, "--no-open", "--reload-on-change", join(tmpDir, "*.txt"), "--watch-ignore", "**/ignored.txt"],
+      async (port) => {
+        const page = await getPage(port);
+        const token = page.body.match(/var sessionToken = '([^']+)'/)![1];
+        const ignoredFile = join(tmpDir, "ignored.txt");
+        const liveFile = join(tmpDir, "live.txt");
+
+        await new Promise<void>((resolveOuter, reject) => {
+          const sseReq = request(
+            {
+              hostname: "127.0.0.1",
+              port,
+              path: `/events?token=${encodeURIComponent(token)}`,
+              method: "GET",
+            },
+            (sseRes) => {
+              let buf = "";
+              let connected = false;
+              sseRes.on("data", (chunk: Buffer) => {
+                buf += chunk.toString();
+                if (!connected && buf.includes("event: connected")) {
+                  connected = true;
+                  writeFileSync(ignoredFile, "x");
+                  setTimeout(() => {
+                    reloadAfterIgnored = buf.includes("event: reload");
+                    writeFileSync(liveFile, "y");
+                  }, 600);
+                }
+                if (connected && buf.includes("event: reload")) {
+                  sseRes.destroy();
+                  resolveOuter();
+                }
+              });
+              sseRes.on("end", () => resolveOuter());
+            }
+          );
+          sseReq.on("error", reject);
+          sseReq.end();
+        });
+
+        postCallback(port, { action: "done", data: {} });
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(reloadAfterIgnored).toBe(false);
+  });
+
+  it("--reload-on-change re-bundles the entry per request", async () => {
+    const htmlPath = join(tmpDir, "rebuild.html");
+    writeFileSync(htmlPath, "<html><body>BEFORE</body></html>");
+
+    let firstBody = "";
+    let secondBody = "";
+    const result = await spawnServe(
+      [htmlPath, "--no-open", "--reload-on-change", htmlPath],
+      async (port) => {
+        firstBody = (await getPage(port)).body;
+        writeFileSync(htmlPath, "<html><body>AFTER</body></html>");
+        secondBody = (await getPage(port)).body;
+        postCallback(port, { action: "done", data: {} });
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(firstBody).toContain("BEFORE");
+    expect(secondBody).toContain("AFTER");
+    expect(secondBody).not.toContain("BEFORE");
+  });
+
+  it("one-shot mode builds the entry once", async () => {
+    const htmlPath = join(tmpDir, "frozen.html");
+    writeFileSync(htmlPath, "<html><body>ONCE</body></html>");
+
+    let firstBody = "";
+    let secondBody = "";
+    const result = await spawnServe(
+      [htmlPath, "--no-open"],
+      async (port) => {
+        firstBody = (await getPage(port)).body;
+        writeFileSync(htmlPath, "<html><body>TWICE</body></html>");
+        secondBody = (await getPage(port)).body;
+        postCallback(port, { action: "done", data: {} });
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(firstBody).toContain("ONCE");
+    expect(secondBody).toContain("ONCE");
+    expect(secondBody).not.toContain("TWICE");
+  });
 });

@@ -56,6 +56,7 @@ export const BRIDGE_SCRIPT = `
         try { dataSubscribers[i](parsed); } catch (_) {}
       }
     });
+    evtSource.addEventListener('reload', function() { window.location.reload(); });
   }
   window.__as.subscribe = function(handler) {
     if (typeof handler === 'function') dataSubscribers.push(handler);

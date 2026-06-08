@@ -62,7 +62,7 @@ JSX artifacts is the non-component bridge, including `window.__as.data`,
 - Negative: `serve` now depends on esbuild at runtime for JSX/TSX files.
 - Negative: the host default component surface becomes an API that must evolve
   carefully.
-- Follow-up: update downstream Creator Kit templates that adopted `AS.*` during
+- Follow-up: update downstream templates that adopted `AS.*` during
   the compatibility migration to use shadcn-style imports after this runtime
   lands and publishes.
 

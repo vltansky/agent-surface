@@ -15,9 +15,18 @@ export {
 } from "./jsx-bundler";
 export { buildMdxArtifact, type MdxArtifact, type MdxMetadata } from "./mdx";
 export { openBrowser, runRefocusSequence, type RefocusResult } from "./platform";
-export { serveUI } from "./serve/entry";
+export { serveUI, buildEntryHtml } from "./serve/entry";
 export { parseServeArgs, DEFAULT_SERVE_TIMEOUT_MS, type ServeOptions } from "./serve/options";
 export { fetchRemoteSource, parseGithubBlobUrl, type GithubBlobUrl, type RemoteSource, type RemoteSourceFetchDeps } from "./serve/remote-source";
 export { tryReuseExisting } from "./serve/session";
-export { readBody, startServer, EXIT_AFTER_DISCONNECT_MS, type ServeResult, type ServeServerHandle } from "./serve/server";
-export { loadTransform, WATCH_DEBOUNCE_MS, type TransformFn } from "./serve/watch";
+export {
+  readBody,
+  startServer,
+  EXIT_AFTER_DISCONNECT_MS,
+  type ServeResult,
+  type ServeServerHandle,
+  type ServeRoute,
+  type ServeRouteContext,
+  type ServeUIExtensions,
+} from "./serve/server";
+export { loadTransform, startReloadWatcher, WATCH_DEBOUNCE_MS, type TransformFn } from "./serve/watch";

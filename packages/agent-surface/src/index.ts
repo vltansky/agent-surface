@@ -5,6 +5,7 @@ export {
   EXIT_AFTER_DISCONNECT_MS,
   MIME_TYPES,
   WATCH_DEBOUNCE_MS,
+  buildEntryHtml,
   buildJsxBundle,
   buildJsxBundleFromFiles,
   fetchRemoteSource,
@@ -15,6 +16,7 @@ export {
   readBody,
   runRefocusSequence,
   serveUI,
+  startReloadWatcher,
   startServer,
   tryReuseExisting,
   type BuildJsxBundleFromFilesOptions,
@@ -29,7 +31,10 @@ export {
   type RemoteSourceFetchDeps,
   type ServeOptions,
   type ServeResult,
+  type ServeRoute,
+  type ServeRouteContext,
   type ServeServerHandle,
+  type ServeUIExtensions,
 } from "./serve";
 export {
   AGENTS_UI_MDX_IMPORT,

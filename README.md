@@ -526,6 +526,8 @@ npx -y agent-surface serve <file.html|file.jsx|file.tsx|file.mdx|url> \
   --port 4177 \
   --session-dir /tmp/agent-surface \
   --watch "src/**/*.ts" \
+  --reload-on-change "src/**/*.{ts,tsx,mdx}" \
+  --watch-ignore "**/*.tmp" \
   --transform ./build-review-data.js \
   --project-dir "$PWD" \
   --reuse stable-key \
@@ -586,6 +588,8 @@ The transform module is loaded from `--transform` and runs once before the first
 
 `--watch` requires `--transform`. Without an explicit `--timeout`, watch mode disables the normal TTL so the browser session can stay alive while a tab is connected.
 
+Use `--reload-on-change <glob>` when the source itself should trigger a browser reload without a transform. Repeat it for multiple globs, and use `--watch-ignore <glob>` to exclude generated or noisy files. Reload mode also rebuilds the entry HTML on each page request, so edits are reflected after reload.
+
 ### Timeout And TTL
 
 `--timeout` is the server TTL in milliseconds:
@@ -593,9 +597,9 @@ The transform module is loaded from `--transform` and runs once before the first
 - Default: 8 hours for normal one-shot forms and pickers.
 - `--timeout 300000`: exit after 5 minutes if the user has not submitted.
 - `--timeout 0`: disable the TTL.
-- Watch mode: defaults to `0` unless you pass `--timeout` explicitly.
+- Live mode (`--watch` or `--reload-on-change`): defaults to `0` unless you pass `--timeout` explicitly.
 
-In watch mode, lifecycle is mostly governed by browser connection state: after the last SSE client disconnects, the server exits after `AGENT_UI_EXIT_AFTER_DISCONNECT_MS` or 30 seconds by default.
+In live mode, lifecycle is mostly governed by browser connection state: after the last SSE client disconnects, the server exits after `AGENT_UI_EXIT_AFTER_DISCONNECT_MS` or 30 seconds by default.
 
 ### Sessions And Reuse
 
