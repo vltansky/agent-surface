@@ -145,6 +145,13 @@ npx -y agent-surface serve \
   --data '{"title":"Review","screens":[]}'
 ```
 
+## Agent Skills
+
+This repository includes agent-ready skills under `skills/`:
+
+- `skills/agent-surface-serve-html`: create and serve HTML, JSX, or TSX review UIs with `window.__as`.
+- `skills/agent-surface-mdx`: create and serve source-first MDX review artifacts with `/source.mdx`, `/plain.md`, and `/metadata.json` routes.
+
 ## Authoring HTML And MDX
 
 Raw HTML works:
