@@ -1,0 +1,20 @@
+[
+  {
+    "id": "BUG-102",
+    "title": "Login form overlaps submit button on narrow screens",
+    "severity": "high",
+    "status": "reproduced"
+  },
+  {
+    "id": "BUG-117",
+    "title": "Release note preview loses metadata link labels",
+    "severity": "medium",
+    "status": "needs-triage"
+  },
+  {
+    "id": "BUG-123",
+    "title": "Keyboard focus outline is hard to see in dark mode",
+    "severity": "low",
+    "status": "reported"
+  }
+]
